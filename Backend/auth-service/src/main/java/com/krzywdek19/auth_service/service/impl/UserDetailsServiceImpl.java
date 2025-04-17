@@ -1,4 +1,4 @@
-package com.krzywdek19.auth_service.service;
+package com.krzywdek19.auth_service.service.impl;
 
 import com.krzywdek19.auth_service.exception.UserError;
 import com.krzywdek19.auth_service.exception.UserException;

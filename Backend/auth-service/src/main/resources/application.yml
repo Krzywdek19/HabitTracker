@@ -4,6 +4,9 @@ spring:
 jwt:
   private-key: classpath:keys/private.pem
   public-key: classpath:keys/public.pem
+  iss: "auth.krzywdek19.com"
+  expiration: 1800000
+  refresh-expiration: 604800000
 server:
   port: 8001
 eureka:
