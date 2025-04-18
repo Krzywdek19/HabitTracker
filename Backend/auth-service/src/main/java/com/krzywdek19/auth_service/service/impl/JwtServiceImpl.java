@@ -88,6 +88,11 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
+    public Long extractExpiration(String token) {
+        return extractClaims(token).getExpiration().getTime();
+    }
+
+    @Override
     public boolean isTokenValid(String token, String email) {
         return !isTokenExpired(token) && isTokenEmailValid(token, email);
     }
