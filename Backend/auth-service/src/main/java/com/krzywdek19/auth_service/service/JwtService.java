@@ -9,7 +9,7 @@ public interface JwtService {
     String generateToken(String email, Long userId, List<String> roles);
     String generateRefreshToken(String email, Long userId, List<String> roles);
     Claims extractClaims(String token);
-    long extractExpiration(String token);
+    Long extractExpiration(String token);
     Long extractId(String token);
     List<String> extractRoles(String token);
     String extractEmail(String token);

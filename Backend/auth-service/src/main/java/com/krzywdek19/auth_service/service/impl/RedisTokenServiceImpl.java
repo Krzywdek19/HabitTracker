@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.TimeUnit;
+
 @Service
 @RequiredArgsConstructor
 public class RedisTokenServiceImpl implements RedisTokenService {
@@ -12,7 +14,7 @@ public class RedisTokenServiceImpl implements RedisTokenService {
 
     @Override
     public void saveRefreshToken(String userId, String refreshToken, long expirationMillis) {
-        redisTemplate.opsForValue().set("refresh_token:" + userId, refreshToken, expirationMillis);
+        redisTemplate.opsForValue().set("refresh_token:" + userId, refreshToken, expirationMillis, TimeUnit.MICROSECONDS);
     }
 
     @Override
