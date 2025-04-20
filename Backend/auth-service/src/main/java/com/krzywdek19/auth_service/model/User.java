@@ -3,7 +3,6 @@ package com.krzywdek19.auth_service.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -66,8 +65,8 @@ public class User implements UserDetails {
         return password;
     }
 
-    @Override
     public String getUsername() {
         return email;
     }
+
 }
