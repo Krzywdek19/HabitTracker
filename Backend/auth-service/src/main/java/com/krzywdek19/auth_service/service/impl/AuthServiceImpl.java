@@ -6,6 +6,7 @@ import com.krzywdek19.auth_service.model.Role;
 import com.krzywdek19.auth_service.model.User;
 import com.krzywdek19.auth_service.model.VerificationToken;
 import com.krzywdek19.auth_service.model.dto.RefreshTokenDto;
+import com.krzywdek19.auth_service.model.dto.ResetPasswordDto;
 import com.krzywdek19.auth_service.model.dto.SignInDto;
 import com.krzywdek19.auth_service.model.dto.SignUpDto;
 import com.krzywdek19.auth_service.repository.TokenRepository;
@@ -36,6 +37,7 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTokenService redisTokenService;
     private final VerificationTokenService verificationTokenService;
     private final TokenRepository tokenRepository;
+    private final VerificationTokenService tokenService;
 
     @Override
     public void signUp(SignUpDto signUpDto) {
@@ -89,23 +91,39 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void active(User user, VerificationToken verificationToken) {
+    public void active(User user, String verificationToken) {
            if(user.isActive()){
                throw new AuthException(AuthError.ACCOUNT_IS_ALREADY_ACTIVATED);
            }
-           if(verificationToken.getExpiryDate().isBefore(LocalDateTime.now())){
-               throw new AuthException(AuthError.TOKEN_IS_EXPIRED);
-           }
-           String token = verificationToken.getToken();
-           if(token != null &&
-                   token.trim().equals(
-                           tokenRepository
-                                   .findByUser(user)
-                                   .orElseThrow(()->new AuthException(AuthError.TOKEN_NOT_FOUND)).getToken().trim())){
+           if(tokenService.verifyToken(user.getId(),verificationToken)){
                user.setActive(true);
                userRepository.save(user);
+               tokenRepository.deleteByUser(user);
            }else {
                throw new AuthException(AuthError.TOKEN_IS_INVALID);
            }
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordDto resetPasswordDto) {
+        var user = userRepository.findByEmail(resetPasswordDto.email())
+                .orElseThrow(() -> new AuthException(AuthError.USER_NOT_FOUND));
+        if(passwordEncoder.matches(resetPasswordDto.oldPassword(), user.getPassword())){
+            user.setPassword(passwordEncoder.encode(resetPasswordDto.newPassword()));
+        }
+        userRepository.save(user);
+    }
+
+    @Override
+    public void resetPasswordByToken(String token,Long userId, String newPassword) {
+        if(tokenService.verifyToken(userId, token)) {
+            var user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AuthException(AuthError.USER_NOT_FOUND));
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            tokenRepository.deleteByUser(user);
+        }else {
+            throw new AuthException(AuthError.TOKEN_IS_INVALID);
+        }
     }
 }
