@@ -1,5 +1,7 @@
 package com.krzywdek19.auth_service.service;
 
+import com.krzywdek19.auth_service.model.User;
+import com.krzywdek19.auth_service.model.VerificationToken;
 import com.krzywdek19.auth_service.model.dto.RefreshTokenDto;
 import com.krzywdek19.auth_service.model.dto.SignInDto;
 import com.krzywdek19.auth_service.model.dto.SignUpDto;
@@ -9,4 +11,5 @@ public interface AuthService {
     void signUp(SignUpDto signUpDto);
     AuthResponseDto signIn(SignInDto signInDto);
     String refreshToken(RefreshTokenDto refreshTokenDto);
+    void active(User user, VerificationToken verificationToken);
 }

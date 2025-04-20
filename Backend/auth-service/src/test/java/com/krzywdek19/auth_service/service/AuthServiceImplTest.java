@@ -27,6 +27,7 @@ public class AuthServiceImplTest {
     JwtService jwtService;
     AuthenticationManager authenticationManager;
     RedisTokenService redisTokenService;
+    VerificationTokenService verificationTokenService;
     AuthService authService;
     SignUpDto signUpDto;
     SignInDto signInDto;
@@ -42,11 +43,14 @@ public class AuthServiceImplTest {
         jwtService = mock(JwtService.class);
         authenticationManager = mock(AuthenticationManager.class);
         redisTokenService = mock(RedisTokenService.class);
+        verificationTokenService = mock(VerificationTokenService.class);
+
         signUpDto = new SignUpDto(testUsername, testEmail, testPassword);
         signInDto = new SignInDto(testEmail, testPassword);
 
         authService = new AuthServiceImpl(
-                userRepository, passwordEncoder, jwtService, authenticationManager, redisTokenService
+                userRepository, passwordEncoder, jwtService, authenticationManager, redisTokenService,
+                verificationTokenService
         );
     }
 

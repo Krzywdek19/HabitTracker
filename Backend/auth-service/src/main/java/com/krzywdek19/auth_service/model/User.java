@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,10 +35,13 @@ public class User implements UserDetails {
     @NotBlank(message = "Password cannot be blank")
     private String password;
     private Role role;
+    private LocalDateTime createdAt;
+    private LocalDateTime lastLogin;
+    private boolean isActive = false;
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return lastLogin != null && LocalDateTime.now().minusDays(180).isBefore(lastLogin);
     }
 
     @Override
@@ -52,7 +56,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return isActive || LocalDateTime.now().minusDays(2).isBefore(createdAt);
     }
 
     @Override
@@ -67,6 +71,15 @@ public class User implements UserDetails {
 
     public String getUsername() {
         return email;
+    }
+
+    public void activeAccount(){
+        this.isActive = true;
+    }
+
+    @PrePersist
+    private void setCreatedAt() {
+        this.createdAt = LocalDateTime.now();
     }
 
 }

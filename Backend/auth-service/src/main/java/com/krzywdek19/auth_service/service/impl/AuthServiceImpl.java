@@ -4,21 +4,27 @@ import com.krzywdek19.auth_service.exception.AuthError;
 import com.krzywdek19.auth_service.exception.AuthException;
 import com.krzywdek19.auth_service.model.Role;
 import com.krzywdek19.auth_service.model.User;
+import com.krzywdek19.auth_service.model.VerificationToken;
 import com.krzywdek19.auth_service.model.dto.RefreshTokenDto;
 import com.krzywdek19.auth_service.model.dto.SignInDto;
 import com.krzywdek19.auth_service.model.dto.SignUpDto;
+import com.krzywdek19.auth_service.repository.TokenRepository;
 import com.krzywdek19.auth_service.repository.UserRepository;
 import com.krzywdek19.auth_service.response.AuthResponseDto;
 import com.krzywdek19.auth_service.service.AuthService;
 import com.krzywdek19.auth_service.service.JwtService;
 import com.krzywdek19.auth_service.service.RedisTokenService;
+import com.krzywdek19.auth_service.service.VerificationTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +34,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RedisTokenService redisTokenService;
+    private final VerificationTokenService verificationTokenService;
+    private final TokenRepository tokenRepository;
 
     @Override
     public void signUp(SignUpDto signUpDto) {
@@ -44,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(signUpDto.username())
                 .password(passwordEncoder.encode(signUpDto.password()))
                 .build();
+        verificationTokenService.sendVerificationToken(user);
         userRepository.save(user);
     }
 
@@ -77,5 +86,26 @@ public class AuthServiceImpl implements AuthService {
         redisTokenService.saveRefreshToken(user.getId().toString(),newRefreshToken, jwtService.extractExpiration(newRefreshToken));
 
         return newRefreshToken;
+    }
+
+    @Override
+    public void active(User user, VerificationToken verificationToken) {
+           if(user.isActive()){
+               throw new AuthException(AuthError.ACCOUNT_IS_ALREADY_ACTIVATED);
+           }
+           if(verificationToken.getExpiryDate().isBefore(LocalDateTime.now())){
+               throw new AuthException(AuthError.TOKEN_IS_EXPIRED);
+           }
+           String token = verificationToken.getToken();
+           if(token != null &&
+                   token.trim().equals(
+                           tokenRepository
+                                   .findByUser(user)
+                                   .orElseThrow(()->new AuthException(AuthError.TOKEN_NOT_FOUND)).getToken().trim())){
+               user.setActive(true);
+               userRepository.save(user);
+           }else {
+               throw new AuthException(AuthError.TOKEN_IS_INVALID);
+           }
     }
 }
