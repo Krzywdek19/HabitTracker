@@ -5,6 +5,7 @@ import com.krzywdek19.auth_service.response.AuthResponseDto;
 import com.krzywdek19.auth_service.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignUpDto signUpDto) {
         authService.signUp(signUpDto);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/signin")
@@ -31,9 +32,9 @@ public class AuthController {
     }
 
     @PostMapping("/activate/send-token")
-    public ResponseEntity<?> sendActivationToken(@RequestBody String email) {
-        authService.sendActivationToken(email);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> sendActivationToken(@RequestBody EmailDto email) {
+        authService.sendActivationToken(email.email());
+        return ResponseEntity.ok("Activation token has been sent");
     }
 
     @PutMapping("/activate/{token}")
@@ -52,7 +53,7 @@ public class AuthController {
     public ResponseEntity<?> sendResetPasswordToken(@RequestBody EmailDto email){
         System.out.println(email);
         authService.sendResetPasswordToken(email.email());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("ResetPasswordToken has been sent");
     }
 
     @PutMapping("/reset-password/{token}")
