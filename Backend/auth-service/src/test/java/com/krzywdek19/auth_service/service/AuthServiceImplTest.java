@@ -8,11 +8,13 @@ import com.krzywdek19.auth_service.model.User;
 import com.krzywdek19.auth_service.model.dto.RefreshTokenDto;
 import com.krzywdek19.auth_service.model.dto.SignInDto;
 import com.krzywdek19.auth_service.model.dto.SignUpDto;
+import com.krzywdek19.auth_service.repository.TokenRepository;
 import com.krzywdek19.auth_service.repository.UserRepository;
 import com.krzywdek19.auth_service.response.AuthResponseDto;
 import com.krzywdek19.auth_service.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -28,6 +30,7 @@ public class AuthServiceImplTest {
     AuthenticationManager authenticationManager;
     RedisTokenService redisTokenService;
     VerificationTokenService verificationTokenService;
+    TokenRepository tokenRepository;
     AuthService authService;
     SignUpDto signUpDto;
     SignInDto signInDto;
@@ -50,7 +53,7 @@ public class AuthServiceImplTest {
 
         authService = new AuthServiceImpl(
                 userRepository, passwordEncoder, jwtService, authenticationManager, redisTokenService,
-                verificationTokenService
+                verificationTokenService, tokenRepository
         );
     }
 
@@ -157,4 +160,6 @@ public class AuthServiceImplTest {
         AuthException exception = assertThrows(AuthException.class, () -> authService.refreshToken(dto));
         assertEquals(AuthError.INVALID_REFRESH_TOKEN, exception.getAuthError());
     }
+
+
 }

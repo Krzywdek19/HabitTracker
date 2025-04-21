@@ -41,7 +41,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return lastLogin != null && LocalDateTime.now().minusDays(180).isBefore(lastLogin);
+        return lastLogin != null && LocalDateTime.now().minusDays(180).isBefore(lastLogin) ||
+                createdAt != null && LocalDateTime.now().minusDays(180).isBefore(createdAt);
     }
 
     @Override

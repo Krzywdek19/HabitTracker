@@ -12,7 +12,9 @@ public interface AuthService {
     void signUp(SignUpDto signUpDto);
     AuthResponseDto signIn(SignInDto signInDto);
     String refreshToken(RefreshTokenDto refreshTokenDto);
-    void active(User user, String verificationToken);
+    void active(String verificationToken);
     void resetPassword(ResetPasswordDto resetPasswordDto);
-    void resetPasswordByToken(String verificationToken, Long userId, String newPassword);
+    void resetPasswordByToken(String token, String newPassword);
+    void sendResetPasswordToken(String email);
+    void sendActivationToken(String email);
 }

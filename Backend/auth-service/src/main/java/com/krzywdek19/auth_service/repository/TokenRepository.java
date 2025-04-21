@@ -16,4 +16,5 @@ public interface TokenRepository extends JpaRepository<VerificationToken,String>
     @Query("SELECT vt FROM VerificationToken vt JOIN FETCH vt.user u WHERE u.id = :userId")
     Optional<VerificationToken> findByUserId(@Param("userId") Long userId);
     void deleteByUser(User user);
+    Optional<VerificationToken> findByToken(String token);
 }

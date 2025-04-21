@@ -23,12 +23,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
-
-        if(!user.isAccountNonExpired()) {
+        if (!user.isAccountNonExpired()) {
             throw new AuthException(AuthError.ACCOUNT_IS_EXPIRED);
         }
 
-        if(!user.isEnabled()) {
+        if (!user.isEnabled()) {
             throw new AuthException(AuthError.ACCOUNT_IS_NOT_ACTIVATED);
         }
 

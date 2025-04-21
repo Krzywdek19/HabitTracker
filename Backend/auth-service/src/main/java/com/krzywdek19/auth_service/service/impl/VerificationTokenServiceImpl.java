@@ -10,6 +10,7 @@ import com.krzywdek19.auth_service.service.VerificationTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,20 +20,32 @@ import java.util.UUID;
 public class VerificationTokenServiceImpl implements VerificationTokenService {
     private final RabbitTemplate rabbitTemplate;
     private final TokenRepository tokenRepository;
-    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public void sendVerificationToken(User user) {
+        var verificationToken = setToken(user);
+        rabbitTemplate.convertAndSend("auth_service_activation", verificationToken.getToken());
+    }
+
+    @Override
+    @Transactional
+    public void sendResetPasswordToken(User user) {
+        var verificationToken = setToken(user);
+        rabbitTemplate.convertAndSend("auth_service_reset_password", verificationToken.getToken());
+    }
+
+    private VerificationToken setToken(User user){
         String token = UUID.randomUUID().toString();
-        VerificationToken verificationToken;
-        if(tokenRepository.existsByUser(user)){
-            tokenRepository.deleteByUser(user);
-        }
-        verificationToken = new VerificationToken();
+        VerificationToken verificationToken = tokenRepository.findByUser(user)
+                .orElse(new VerificationToken());
+
         verificationToken.setUser(user);
         verificationToken.setToken(token);
+        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+
         tokenRepository.save(verificationToken);
-        rabbitTemplate.convertAndSend("auth_service_activation", verificationToken.getToken());
+        return verificationToken;
     }
 
     @Override
@@ -43,8 +56,8 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
     }
 
     @Override
-    public boolean verifyToken(Long userId, String token) {
-        var verificationToken = tokenRepository.findByUserId(userId)
+    public boolean verifyToken(String token) {
+        var verificationToken = tokenRepository.findByToken(token)
                 .orElseThrow(()-> new AuthException(AuthError.TOKEN_NOT_FOUND));
         if(verificationToken.getExpiryDate().isBefore(LocalDateTime.now())){
             throw new AuthException(AuthError.TOKEN_IS_EXPIRED);
@@ -53,5 +66,12 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
                 .getToken()
                 .trim()
                 .equals(token.trim());
+    }
+
+    public User getUserByToken(String token) {
+        return tokenRepository
+                .findByToken(token)
+                .orElseThrow(()-> new AuthException(AuthError.TOKEN_NOT_FOUND))
+                .getUser();
     }
 }

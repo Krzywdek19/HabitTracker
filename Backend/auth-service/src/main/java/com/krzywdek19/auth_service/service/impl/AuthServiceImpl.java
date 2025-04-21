@@ -17,15 +17,13 @@ import com.krzywdek19.auth_service.service.JwtService;
 import com.krzywdek19.auth_service.service.RedisTokenService;
 import com.krzywdek19.auth_service.service.VerificationTokenService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTokenService redisTokenService;
     private final VerificationTokenService verificationTokenService;
     private final TokenRepository tokenRepository;
-    private final VerificationTokenService tokenService;
 
     @Override
     public void signUp(SignUpDto signUpDto) {
@@ -54,8 +51,8 @@ public class AuthServiceImpl implements AuthService {
                 .username(signUpDto.username())
                 .password(passwordEncoder.encode(signUpDto.password()))
                 .build();
-        verificationTokenService.sendVerificationToken(user);
         userRepository.save(user);
+        verificationTokenService.sendVerificationToken(user);
     }
 
     @Override
@@ -67,7 +64,6 @@ public class AuthServiceImpl implements AuthService {
 
         var user =  userRepository.findByEmail(signInDto.email())
                 .orElseThrow(() -> new AuthException(AuthError.USER_NOT_FOUND));
-
         String accessToken = jwtService.generateToken(user.getEmail(), user.getId(), List.of(user.getRole().name()));
         String refreshToken = jwtService.generateRefreshToken(user.getEmail(), user.getId(), List.of(user.getRole().name()));
         redisTokenService.saveRefreshToken(user.getId().toString(), refreshToken, jwtService.extractExpiration(refreshToken));
@@ -91,12 +87,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void active(User user, String verificationToken) {
+    @Transactional
+    public void active(String verificationToken) {
+           var user = verificationTokenService.getUserByToken(verificationToken);
            if(user.isActive()){
                throw new AuthException(AuthError.ACCOUNT_IS_ALREADY_ACTIVATED);
            }
-           if(tokenService.verifyToken(user.getId(),verificationToken)){
-               user.setActive(true);
+           if(verificationTokenService.verifyToken(verificationToken)){
+               user.activeAccount();
                userRepository.save(user);
                tokenRepository.deleteByUser(user);
            }else {
@@ -115,15 +113,28 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void resetPasswordByToken(String token,Long userId, String newPassword) {
-        if(tokenService.verifyToken(userId, token)) {
-            var user = userRepository.findById(userId)
-                    .orElseThrow(() -> new AuthException(AuthError.USER_NOT_FOUND));
+    @Transactional
+    public void resetPasswordByToken(String token, String newPassword) {
+        if(verificationTokenService.verifyToken(token)) {
+            var user = verificationTokenService
+                    .getUserByToken(token);
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
             tokenRepository.deleteByUser(user);
         }else {
             throw new AuthException(AuthError.TOKEN_IS_INVALID);
         }
+    }
+
+    public void sendResetPasswordToken(String email) {
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthException(AuthError.USER_NOT_FOUND));
+        verificationTokenService.sendResetPasswordToken(user);
+    }
+
+    public void sendActivationToken(String email) {
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthException(AuthError.USER_NOT_FOUND));
+        verificationTokenService.sendVerificationToken(user);
     }
 }

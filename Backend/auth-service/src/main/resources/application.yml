@@ -1,4 +1,6 @@
 spring:
+  rabbitmq:
+    port: 5672
   data:
     redis:
       host: localhost

@@ -1,17 +1,12 @@
 package com.krzywdek19.auth_service.controller;
 
-import com.krzywdek19.auth_service.model.dto.RefreshTokenDto;
-import com.krzywdek19.auth_service.model.dto.SignInDto;
-import com.krzywdek19.auth_service.model.dto.SignUpDto;
+import com.krzywdek19.auth_service.model.dto.*;
 import com.krzywdek19.auth_service.response.AuthResponseDto;
 import com.krzywdek19.auth_service.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
@@ -33,5 +28,36 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenDto refreshTokenDto) {
         return ResponseEntity.ok(authService.refreshToken(refreshTokenDto));
+    }
+
+    @PostMapping("/activate/send-token")
+    public ResponseEntity<?> sendActivationToken(@RequestBody String email) {
+        authService.sendActivationToken(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/activate/{token}")
+    public ResponseEntity<?> activateToken(@PathVariable String token) {
+        authService.active(token);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
+        authService.resetPassword(resetPasswordDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password/send-token")
+    public ResponseEntity<?> sendResetPasswordToken(@RequestBody EmailDto email){
+        System.out.println(email);
+        authService.sendResetPasswordToken(email.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/reset-password/{token}")
+    public ResponseEntity<?> resetPassword(@PathVariable("token") String token, @RequestBody String password){
+        authService.resetPasswordByToken(token, password);
+        return ResponseEntity.ok().build();
     }
 }
