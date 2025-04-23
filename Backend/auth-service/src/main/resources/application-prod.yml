@@ -1,0 +1,30 @@
+spring:
+  rabbitmq:
+    port: 5671
+    username: ${amqp-username}
+    password: ${amqp-password}
+    ssl:
+      enabled: true
+    addresses: ${amqp-address}
+  data:
+    redis:
+      host: ${redis-host}
+      port: 6379
+      password: ${redis-password}
+      ssl:
+        enabled: true
+      username: default
+  application:
+    name: AUTH-SERVICE
+jwt:
+  private-key: classpath:keys/private.pem
+  public-key: classpath:keys/public.pem
+  iss: "auth.krzywdek19.com"
+  expiration: 1800000
+  refresh-expiration: 604800000
+server:
+  port: 8001
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
